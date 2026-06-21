@@ -59,6 +59,18 @@ const squadSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const tournamentSchema = new mongoose.Schema(
+  {
+    name: { type: String, default: "" },
+    game: { type: String, enum: ["BGMI", "EFOOTBALL", "VALORANT"], default: "BGMI" },
+    status: { type: String, enum: ["upcoming", "ongoing", "past"], default: "upcoming" },
+    date: { type: String, default: "" },        // free text, e.g. "12 July 2026" or "12-15 July"
+    description: { type: String, default: "" },
+    result: { type: String, default: "" }        // optional, e.g. "Eyries finished 2nd" — mainly for past events
+  },
+  { _id: false }
+);
+
 const contentSchema = new mongoose.Schema({
   _id: { type: String, default: "site-content" },
 
@@ -98,6 +110,24 @@ const contentSchema = new mongoose.Schema({
     twitter: { type: String, default: "" },
     youtube: { type: String, default: "" },
     discord: { type: String, default: "" }
+  },
+
+  /*
+    TOURNAMENTS
+    -----------
+    gameLogos: official game logo image URLs, pasted in by admin (we can't
+    generate or supply copyrighted game logos ourselves — same paste-a-link
+    pattern used for every other photo on this site).
+    list: every tournament entry, each tagged with one game + one status.
+  */
+  tournaments: {
+    gameLogos: {
+      BGMI: { type: String, default: "https://img.sanishtech.com/u/3a5663f71064c78daf121427debcba8c.jpg" },
+      EFOOTBALL: { type: String, default: "https://img.sanishtech.com/u/b1f6e81455cae4813574a8bf583d8779.jpg" },
+      VALORANT: { type: String, default: "https://img.sanishtech.com/u/a3013629ee618bd7db00f8dff82d288d.jpg" }
+    },
+    registrationLink: { type: String, default: "" }, // single Google Form (or any) URL, applies to every tournament's Register button
+    list: { type: [tournamentSchema], default: [] }
   }
 });
 

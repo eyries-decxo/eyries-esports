@@ -63,9 +63,29 @@ router.get("/", async (req, res) => {
       needsSave = true;
     }
 
+    // Same safe backfill for tournaments — older documents won't have this.
+    if (!content.tournaments) {
+      content.tournaments = { gameLogos: { BGMI: "", EFOOTBALL: "", VALORANT: "" }, registrationLink: "", list: [] };
+      needsSave = true;
+    } else {
+      if (!content.tournaments.gameLogos) {
+        content.tournaments.gameLogos = { BGMI: "", EFOOTBALL: "", VALORANT: "" };
+        needsSave = true;
+      }
+      if (content.tournaments.registrationLink === undefined) {
+        content.tournaments.registrationLink = "";
+        needsSave = true;
+      }
+      if (!Array.isArray(content.tournaments.list)) {
+        content.tournaments.list = [];
+        needsSave = true;
+      }
+    }
+
     if (needsSave) {
       content.markModified("squads");
       content.markModified("hero");
+      content.markModified("tournaments");
       await content.save();
     }
 
@@ -87,7 +107,7 @@ router.get("/", async (req, res) => {
 */
 router.put("/", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const allowedFields = ["hero", "founder", "coFounders", "team", "achievements", "squads", "contact"];
+    const allowedFields = ["hero", "founder", "coFounders", "team", "achievements", "squads", "tournaments", "contact"];
     const updates = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];

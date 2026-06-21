@@ -57,6 +57,12 @@
 <!-- ============================================================ -->
 <div id="app" class="app">
 
+  <!-- Fixed background watermark: sharp near top, blurs progressively as the
+       page scrolls down. Purely decorative — sits behind all real content. -->
+  <div class="logo-watermark" id="logoWatermark" aria-hidden="true">
+    <img src="assets/logo.png" alt="">
+  </div>
+
   <!-- TOP BAR -->
   <header class="topbar">
     <div class="brand">
@@ -65,6 +71,10 @@
     </div>
     <div class="topbar-right">
       <span class="role-badge" id="roleBadge"></span>
+      <button class="bell-btn" id="bellBtn" aria-label="Tournaments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="bell-dot hidden" id="bellDot"></span>
+      </button>
       <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -76,6 +86,7 @@
     <button class="navlink" data-target="home">Home</button>
     <button class="navlink" data-target="about">About</button>
     <button class="navlink" data-target="squads">Squads</button>
+    <button class="navlink" data-target="tournaments">Tournaments</button>
     <button class="navlink" data-target="achievements">Achievements</button>
     <button class="navlink" data-target="contact">Contact</button>
     <button class="navlink hidden" id="manageAdminsNavBtn" data-target="manageAdmins">Manage Admins</button>
@@ -157,17 +168,9 @@
       <button class="admin-add-btn hidden" data-add="announcement">+ Add announcement</button>
     </section>
 
-    <!-- ============ ACHIEVEMENTS ============ -->
-    <section class="panel" id="achievements">
-      <div class="panel-eyebrow">03 — Achievements</div>
-      <h2 class="panel-title">Trophies &amp; titles</h2>
-      <div class="trophy-list" id="trophyList"></div>
-      <button class="admin-add-btn hidden" data-add="achievements">+ Add achievement</button>
-    </section>
-
     <!-- ============ CONTACT ============ -->
     <section class="panel" id="contact">
-      <div class="panel-eyebrow">04 — Contact</div>
+      <div class="panel-eyebrow">03 — Contact</div>
       <h2 class="panel-title">Reach the squad</h2>
 
       <div class="contact-grid" id="contactGrid"></div>
@@ -179,7 +182,7 @@
 
     <!-- ============ MANAGE ADMINS (admin only) ============ -->
     <section class="panel hidden" id="manageAdmins">
-      <div class="panel-eyebrow">05 — Admin</div>
+      <div class="panel-eyebrow">04 — Admin</div>
       <h2 class="panel-title">Manage admins</h2>
 
       <div class="about-block-label">Create a new account</div>
@@ -199,6 +202,71 @@
     </section>
 
   </main>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOURNAMENTS OVERLAY (only reachable via nav/bell, never scroll) -->
+<!-- ============================================================ -->
+<div class="tournaments-overlay hidden" id="tournamentsOverlay">
+  <header class="topbar tournaments-topbar">
+    <button class="tournaments-back" id="tournamentsBackBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>Back</span>
+    </button>
+    <span class="brand-name">TOURNAMENTS</span>
+    <span style="width:60px;"></span>
+  </header>
+
+  <div class="tournaments-content">
+    <div class="game-switcher" id="tournamentGameSwitcher">
+      <button class="tournament-game-btn active" data-tgame="BGMI">
+        <span class="tournament-game-logo" id="logoBGMI" data-edit-field="tournaments.gameLogos.BGMI" data-edit-type="photo"><span class="tournament-game-logo-placeholder">BGMI</span></span>
+        BGMI
+      </button>
+      <button class="tournament-game-btn" data-tgame="EFOOTBALL">
+        <span class="tournament-game-logo" id="logoEFOOTBALL" data-edit-field="tournaments.gameLogos.EFOOTBALL" data-edit-type="photo"><span class="tournament-game-logo-placeholder">EFB</span></span>
+        eFootball
+      </button>
+      <button class="tournament-game-btn" data-tgame="VALORANT">
+        <span class="tournament-game-logo" id="logoVALORANT" data-edit-field="tournaments.gameLogos.VALORANT" data-edit-type="photo"><span class="tournament-game-logo-placeholder">VAL</span></span>
+        Valorant
+      </button>
+    </div>
+
+    <div class="status-filter-row" id="statusFilterRow">
+      <button class="chip active" data-status="all">All</button>
+      <button class="chip" data-status="ongoing">Ongoing</button>
+      <button class="chip" data-status="upcoming">Upcoming</button>
+      <button class="chip" data-status="past">Past</button>
+    </div>
+
+    <div class="reg-link-row hidden" id="regLinkRow">
+      <span class="reg-link-label">Registration form:</span>
+      <span class="reg-link-value" id="regLinkValue" data-edit-field="tournaments.registrationLink" data-edit-type="text">[Paste Google Form link]</span>
+    </div>
+
+    <div class="tournament-list" id="tournamentList"></div>
+    <button class="admin-add-btn hidden" data-add="tournament">+ Add tournament</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ACHIEVEMENTS OVERLAY (only reachable via nav, never scroll)   -->
+<!-- ============================================================ -->
+<div class="tournaments-overlay hidden" id="achievementsOverlay">
+  <header class="topbar tournaments-topbar">
+    <button class="tournaments-back" id="achievementsBackBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>Back</span>
+    </button>
+    <span class="brand-name">ACHIEVEMENTS</span>
+    <span style="width:60px;"></span>
+  </header>
+
+  <div class="tournaments-content">
+    <div class="trophy-list" id="trophyList"></div>
+    <button class="admin-add-btn hidden" data-add="achievements">+ Add achievement</button>
+  </div>
 </div>
 
 <!-- ============================================================ -->

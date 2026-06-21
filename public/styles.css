@@ -133,6 +133,34 @@ a{color:inherit;text-decoration:none;}
   margin:0 auto;
   min-height:100vh;
   position:relative;
+  overflow-x:hidden;
+}
+
+/* Decorative background watermark — sits behind all real content (z-index 0),
+   never intercepts clicks (pointer-events:none). JS sets --watermark-blur on
+   #app as the page scrolls, growing the blur the further down you go; the
+   watermark itself stays sharp near the top (Home) by design. */
+.logo-watermark{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  pointer-events:none;
+  overflow:hidden;
+}
+.logo-watermark img{
+  width:140%;
+  max-width:900px;
+  margin-top:60px;
+  opacity:0.16;
+  filter:blur(var(--watermark-blur, 0px));
+  transition:filter 0.15s linear;
+}
+.topbar, .navdrawer, .nav-overlay, .content, .auth-screen, .tournaments-overlay, .edit-modal-overlay, .toast{
+  position:relative;
+  z-index:1;
 }
 .topbar{
   position:sticky; top:0; z-index:40;
@@ -161,6 +189,24 @@ a{color:inherit;text-decoration:none;}
   border:1px solid var(--line);color:var(--text-dim);
 }
 .role-badge.admin{color:var(--cyan);border-color:var(--blue);background:rgba(59,130,246,0.1);}
+
+.bell-btn{
+  position:relative;
+  width:38px;height:38px;border-radius:8px;
+  background:var(--panel);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-dim);
+}
+.bell-btn svg{width:18px;height:18px;}
+.bell-btn:active{background:rgba(59,130,246,0.1);color:var(--cyan);}
+.bell-dot{
+  position:absolute; top:6px; right:6px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 6px var(--cyan);
+  animation:bell-pulse 1.6s ease-in-out infinite;
+}
+@keyframes bell-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.55;transform:scale(0.8);}}
 
 /* hamburger = "four lines" requested; we use 3 standard bars (industry-standard hamburger) */
 .hamburger{
@@ -471,7 +517,7 @@ a{color:inherit;text-decoration:none;}
 }
 
 .edit-modal-overlay{
-  position:fixed; inset:0; z-index:100;
+  position:fixed; inset:0; z-index:300;
   background:rgba(0,0,0,0.6);
   display:flex; align-items:center; justify-content:center;
   padding:20px;
@@ -513,7 +559,7 @@ a{color:inherit;text-decoration:none;}
   background:var(--panel-2); border:1px solid var(--blue);
   color:var(--text); padding:12px 20px; border-radius:8px;
   font-size:13px; font-weight:500;
-  z-index:200;
+  z-index:310;
   opacity:0; pointer-events:none;
   transition:opacity 0.25s, transform 0.25s;
 }
@@ -582,6 +628,150 @@ a{color:inherit;text-decoration:none;}
 .announcement-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14.5px;}
 .announcement-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text-dim);flex-shrink:0;}
 .announcement-body{font-size:12.5px;color:var(--text-dim);margin-top:6px;line-height:1.5;}
+
+/* ---------- TOURNAMENTS OVERLAY ----------
+   Color rule for this section ONLY: fluro blue (--cyan), blue (--blue/--blue-deep),
+   black (--void/--panel), and white/off-white (--text) — no green/red status colors,
+   no amber. Status is distinguished by label + icon + border weight, not hue. */
+.tournaments-overlay{
+  position:fixed; inset:0; z-index:250;
+  background:var(--void);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.tournaments-topbar{
+  position:sticky; top:0;
+  justify-content:space-between;
+}
+.tournaments-back{
+  display:flex; align-items:center; gap:6px;
+  background:none; border:none; color:var(--text);
+  font-family:'Rajdhani',sans-serif; font-weight:600; font-size:13px; letter-spacing:0.03em;
+}
+.tournaments-back svg{width:18px;height:18px;}
+.tournaments-content{padding:20px 16px 60px;}
+
+.tournament-game-btn{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:14px 10px;
+  flex:1; flex-shrink:0;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.04em;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text-dim);
+  text-transform:uppercase;
+}
+.tournament-game-btn.active{
+  background:linear-gradient(135deg, var(--blue-deep), var(--blue));
+  color:#fff;
+  border-color:var(--blue);
+}
+.tournament-game-logo{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--void);
+  border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  background-size:cover;background-position:center;
+  overflow:hidden;
+}
+.tournament-game-btn.active .tournament-game-logo{border-color:#fff;}
+.tournament-game-logo-placeholder{
+  font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600;
+  color:var(--text-dim); letter-spacing:0.04em;
+}
+
+.status-filter-row{
+  display:flex; gap:8px; margin:20px 0 22px; overflow-x:auto;
+  scrollbar-width:none;
+}
+.status-filter-row::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0;
+  font-family:'Rajdhani',sans-serif;
+  font-size:12px; font-weight:600; letter-spacing:0.04em;
+  padding:8px 16px;
+  border-radius:20px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text-dim);
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.chip.active{
+  background:#fff;
+  color:var(--void);
+  border-color:#fff;
+}
+
+.reg-link-row{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 14px;
+  margin-bottom:18px;
+  font-size:12px;
+}
+.reg-link-label{
+  font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.04em;
+  color:var(--text-dim); text-transform:uppercase; font-size:10.5px;
+}
+.reg-link-value{color:var(--cyan); font-family:'JetBrains Mono',monospace; word-break:break-all;}
+
+.tournament-register-btn{
+  display:inline-block;
+  margin-top:12px;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; letter-spacing:0.05em;
+  text-transform:uppercase;
+  padding:9px 18px;
+  border-radius:7px;
+  background:linear-gradient(135deg, var(--blue-deep), var(--blue));
+  color:#fff;
+  text-align:center;
+}
+
+.tournament-list{display:flex; flex-direction:column; gap:14px;}
+.tournament-card{
+  background:linear-gradient(155deg, var(--panel), var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:18px;
+  clip-path:polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+}
+.tournament-card.status-ongoing{border-color:var(--cyan); box-shadow:0 0 0 1px rgba(125,211,252,0.15);}
+.tournament-top-row{
+  display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;
+}
+.tournament-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16.5px; color:#fff;}
+.tournament-game-tag{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--cyan); margin-top:3px;
+}
+.tournament-status-badge{
+  flex-shrink:0;
+  font-family:'Rajdhani',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.08em;
+  text-transform:uppercase;
+  padding:4px 10px; border-radius:4px;
+}
+.tournament-status-badge.upcoming{background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.25);}
+.tournament-status-badge.ongoing{background:var(--cyan); color:var(--void);}
+.tournament-status-badge.past{background:transparent; color:var(--text-dim); border:1px solid var(--line);}
+.tournament-date{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:8px;}
+.tournament-desc{font-size:13px; color:var(--text-dim); line-height:1.55;}
+.tournament-result{
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
+  font-size:12.5px; color:var(--cyan); font-family:'JetBrains Mono',monospace;
+}
+.tournament-admin-row{
+  display:flex; gap:8px; margin-top:12px;
+}
+.tournament-delete-btn{
+  font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.04em;
+  padding:6px 12px; border-radius:6px;
+  background:var(--void); border:1px solid var(--line); color:var(--text-dim);
+  text-transform:uppercase;
+}
+.tournament-delete-btn:hover{border-color:#fff; color:#fff;}
 
 /* ---------- MANAGE ADMINS ---------- */
 .admin-create-form{display:flex;flex-direction:column;gap:10px;max-width:420px;}

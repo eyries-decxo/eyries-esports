@@ -197,6 +197,28 @@ applyAuthState();
 loadContentAndRender();
 
 /* ---------------------------------------------------------------------
+   LOGO WATERMARK BLUR — sharp at the top (Home), grows blurrier the
+   further down the page is scrolled. Purely decorative; never affects
+   real content, which is layered above it (z-index) and stays sharp.
+
+   Note: the page scrolls at the window/document level (no inner
+   scrollable container), so we read window.scrollY, not an element's
+   scrollTop.
+   --------------------------------------------------------------------- */
+const MAX_WATERMARK_BLUR = 14; // px, blur ceiling so it doesn't vanish entirely
+const WATERMARK_BLUR_DISTANCE = 1800; // px of scroll over which blur ramps up fully
+
+function updateWatermarkBlur() {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+  const ratio = Math.min(scrollTop / WATERMARK_BLUR_DISTANCE, 1);
+  const blur = ratio * MAX_WATERMARK_BLUR;
+  document.getElementById("app").style.setProperty("--watermark-blur", `${blur}px`);
+}
+
+window.addEventListener("scroll", updateWatermarkBlur, { passive: true });
+updateWatermarkBlur();
+
+/* ---------------------------------------------------------------------
    HAMBURGER NAV + SCROLL-TO-SECTION
    --------------------------------------------------------------------- */
 const hamburgerBtn = document.getElementById("hamburgerBtn");
@@ -222,6 +244,16 @@ navOverlay.addEventListener("click", closeNav);
 
 document.querySelectorAll(".navlink[data-target]").forEach((link) => {
   link.addEventListener("click", () => {
+    if (link.dataset.target === "tournaments") {
+      openTournamentsOverlay();
+      closeNav();
+      return;
+    }
+    if (link.dataset.target === "achievements") {
+      openAchievementsOverlay();
+      closeNav();
+      return;
+    }
     const target = document.getElementById(link.dataset.target);
     if (target) target.scrollIntoView({ behavior: "smooth" });
     closeNav();
@@ -234,6 +266,196 @@ document.querySelectorAll("[data-scrollto]").forEach((el) => {
     if (target) target.scrollIntoView({ behavior: "smooth" });
   });
 });
+
+/* ---------------------------------------------------------------------
+   TOURNAMENTS OVERLAY — separate full-screen view, never part of scroll.
+   Reached only via the hamburger "Tournaments" link or the bell button.
+   --------------------------------------------------------------------- */
+const tournamentsOverlay = document.getElementById("tournamentsOverlay");
+const bellBtn = document.getElementById("bellBtn");
+const bellDot = document.getElementById("bellDot");
+let currentTournamentGame = "BGMI";
+let currentStatusFilter = "all";
+
+function openTournamentsOverlay() {
+  tournamentsOverlay.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  renderTournaments();
+}
+function closeTournamentsOverlay() {
+  tournamentsOverlay.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+bellBtn.addEventListener("click", openTournamentsOverlay);
+document.getElementById("tournamentsBackBtn").addEventListener("click", closeTournamentsOverlay);
+
+/* ---------------------------------------------------------------------
+   ACHIEVEMENTS OVERLAY — same pattern as Tournaments: a separate
+   full-screen view, reachable only via the hamburger nav, never part
+   of the normal scroll.
+   --------------------------------------------------------------------- */
+const achievementsOverlay = document.getElementById("achievementsOverlay");
+
+function openAchievementsOverlay() {
+  achievementsOverlay.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  renderAchievements();
+}
+function closeAchievementsOverlay() {
+  achievementsOverlay.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+document.getElementById("achievementsBackBtn").addEventListener("click", closeAchievementsOverlay);
+
+function renderAchievements() {
+  const c = siteContent;
+  document.getElementById("trophyList").innerHTML = (c.achievements || [])
+    .map((a, i) => renderTrophyCard(a, i))
+    .join("");
+  attachEditHandlers();
+  document.querySelectorAll('.admin-add-btn[data-add="achievements"]').forEach((btn) => {
+    btn.classList.toggle("hidden", !isAdminUser());
+  });
+}
+
+document.querySelectorAll(".tournament-game-btn").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    // Don't switch games if the click landed on the editable logo itself
+    // while in admin mode — let the edit handler take that click instead.
+    if (e.target.closest(".tournament-game-logo") && isAdminUser()) return;
+    currentTournamentGame = btn.dataset.tgame;
+    renderTournaments();
+  });
+});
+
+document.querySelectorAll("#statusFilterRow .chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    currentStatusFilter = chip.dataset.status;
+    renderTournaments();
+  });
+});
+
+function gameLogoSlot(game) {
+  const el = document.getElementById(`logo${game}`);
+  return el;
+}
+
+function renderGameLogos() {
+  const logos = (siteContent.tournaments && siteContent.tournaments.gameLogos) || {};
+  ["BGMI", "EFOOTBALL", "VALORANT"].forEach((game) => {
+    const slot = gameLogoSlot(game);
+    if (!slot) return;
+    const url = logos[game] || "";
+    if (url) {
+      slot.style.backgroundImage = `url('${url}')`;
+      slot.innerHTML = "";
+    } else {
+      slot.style.backgroundImage = "";
+      const label = game === "EFOOTBALL" ? "EFB" : game === "VALORANT" ? "VAL" : "BGMI";
+      slot.innerHTML = `<span class="tournament-game-logo-placeholder">${label}</span>`;
+    }
+  });
+}
+
+function renderTournamentCard(t, index, registrationLink) {
+  const prefix = `tournaments.list.${index}`;
+  const statusLabel = { upcoming: "Upcoming", ongoing: "Ongoing", past: "Past" }[t.status] || "Upcoming";
+
+  const adminRow = isAdminUser()
+    ? `<div class="tournament-admin-row">
+         <button class="tournament-delete-btn" data-delete-tournament="${index}">Delete</button>
+       </div>`
+    : "";
+
+  // Register button only shows if an admin has set a registration link, and
+  // only really makes sense for events you can still sign up for.
+  const showRegister = registrationLink && (t.status === "upcoming" || t.status === "ongoing");
+  const registerBtn = showRegister
+    ? `<a class="tournament-register-btn" href="${registrationLink}" target="_blank" rel="noopener">Reg Now</a>`
+    : "";
+
+  return `
+    <div class="tournament-card status-${t.status}">
+      <div class="tournament-top-row">
+        <div>
+          <div class="tournament-name" data-edit-field="${prefix}.name" data-edit-type="text">${t.name || "[Tournament name]"}</div>
+          <div class="tournament-game-tag">${t.game || "BGMI"}</div>
+        </div>
+        <span class="tournament-status-badge ${t.status}" data-edit-field="${prefix}.status" data-edit-type="text">${statusLabel}</span>
+      </div>
+      <div class="tournament-date" data-edit-field="${prefix}.date" data-edit-type="text">${t.date || "[Date]"}</div>
+      <div class="tournament-desc" data-edit-field="${prefix}.description" data-edit-type="textarea">${t.description || "[Description]"}</div>
+      ${t.result || isAdminUser()
+        ? `<div class="tournament-result" data-edit-field="${prefix}.result" data-edit-type="text">${t.result || "[Add result — optional]"}</div>`
+        : ""}
+      ${registerBtn}
+      ${adminRow}
+    </div>
+  `;
+}
+
+function renderTournaments() {
+  renderGameLogos();
+
+  document.querySelectorAll(".tournament-game-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tgame === currentTournamentGame);
+  });
+  document.querySelectorAll("#statusFilterRow .chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.status === currentStatusFilter);
+  });
+
+  const registrationLink = (siteContent.tournaments && siteContent.tournaments.registrationLink) || "";
+  const regLinkRow = document.getElementById("regLinkRow");
+  const regLinkValue = document.getElementById("regLinkValue");
+  if (isAdminUser()) {
+    regLinkRow.classList.remove("hidden");
+    regLinkValue.textContent = registrationLink || "[Paste Google Form link]";
+  } else {
+    regLinkRow.classList.add("hidden");
+  }
+
+  const allTournaments = (siteContent.tournaments && siteContent.tournaments.list) || [];
+
+  const filtered = allTournaments
+    .map((t, i) => ({ t, i })) // keep original index for correct edit-path / delete targeting
+    .filter(({ t }) => t.game === currentTournamentGame)
+    .filter(({ t }) => currentStatusFilter === "all" || t.status === currentStatusFilter);
+
+  const listEl = document.getElementById("tournamentList");
+  listEl.innerHTML = filtered.length
+    ? filtered.map(({ t, i }) => renderTournamentCard(t, i, registrationLink)).join("")
+    : `<div class="empty-note">No ${currentStatusFilter === "all" ? "" : currentStatusFilter + " "}tournaments for this game yet.</div>`;
+
+  attachEditHandlers();
+
+  document.querySelectorAll(".tournament-delete-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const idx = parseInt(btn.dataset.deleteTournament, 10);
+      if (!confirm("Delete this tournament? This can't be undone.")) return;
+      siteContent.tournaments.list.splice(idx, 1);
+      try {
+        await apiRequest("/content", { method: "PUT", body: JSON.stringify(siteContent) });
+        showToast("Tournament deleted.");
+        renderTournaments();
+      } catch (err) {
+        showToast(err.message || "Could not delete. Try again.");
+      }
+    });
+  });
+
+  document.querySelectorAll('.admin-add-btn[data-add="tournament"]').forEach((btn) => {
+    btn.classList.toggle("hidden", !isAdminUser());
+  });
+
+  updateBellDot();
+}
+
+function updateBellDot() {
+  const allTournaments = (siteContent.tournaments && siteContent.tournaments.list) || [];
+  const hasOngoing = allTournaments.some((t) => t.status === "ongoing");
+  bellDot.classList.toggle("hidden", !hasOngoing);
+}
 
 /* ---------------------------------------------------------------------
    RENDERING
@@ -410,6 +632,8 @@ function restartCarouselTimer() {
 function renderAll() {
   const c = siteContent;
 
+  updateBellDot();
+
   // Hero
   document.querySelector('[data-edit-field="hero.tagline"]').textContent = c.hero?.tagline || "";
   document.querySelector('[data-edit-field="hero.headline"]').textContent = c.hero?.headline || "";
@@ -503,7 +727,8 @@ const blankItemFor = {
   team: () => ({ name: "", title: "", bio: "", photoUrl: "" }),
   achievements: () => ({ title: "", event: "", year: "", description: "", photoUrl: "" }),
   player: () => ({ name: "", gamingId: "", role: "", photoUrl: "" }),
-  announcement: () => ({ title: "", body: "", date: "" })
+  announcement: () => ({ title: "", body: "", date: "" }),
+  tournament: () => ({ name: "", game: currentTournamentGame, status: "upcoming", date: "", description: "", result: "" })
 };
 
 document.querySelectorAll(".admin-add-btn").forEach((btn) => {
@@ -528,6 +753,10 @@ document.querySelectorAll(".admin-add-btn").forEach((btn) => {
       siteContent.squads[currentGame] = siteContent.squads[currentGame] || { players: [], announcements: [] };
       siteContent.squads[currentGame].announcements = siteContent.squads[currentGame].announcements || [];
       siteContent.squads[currentGame].announcements.push(makeBlank());
+    } else if (kind === "tournament") {
+      siteContent.tournaments = siteContent.tournaments || { gameLogos: {}, list: [] };
+      siteContent.tournaments.list = siteContent.tournaments.list || [];
+      siteContent.tournaments.list.push(makeBlank());
     }
 
     try {
@@ -536,7 +765,11 @@ document.querySelectorAll(".admin-add-btn").forEach((btn) => {
         body: JSON.stringify(siteContent)
       });
       showToast("Added — click its fields to fill them in.");
-      renderAll();
+      if (kind === "tournament") {
+        renderTournaments();
+      } else {
+        renderAll();
+      }
     } catch (err) {
       showToast(err.message || "Could not save. Try again.");
     }
