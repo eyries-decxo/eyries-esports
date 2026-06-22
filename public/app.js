@@ -362,10 +362,9 @@ function renderTournamentCard(t, index, registrationLink) {
   const prefix = `tournaments.list.${index}`;
   const statusLabel = { upcoming: "Upcoming", ongoing: "Ongoing", past: "Past" }[t.status] || "Upcoming";
 
-  // Register Now only shows if an admin has set a registration link, and
-  // only really makes sense for events you can still sign up for.
-  const showRegister = registrationLink && (t.status === "upcoming" || t.status === "ongoing");
-  const registerBtn = showRegister
+  // Register Now shows on every card (any status), as long as an admin
+  // has actually set a registration link — no point linking to nothing.
+  const registerBtn = registrationLink
     ? `<a class="tournament-register-btn" href="${registrationLink}" target="_blank" rel="noopener">Register Now</a>`
     : "";
 
