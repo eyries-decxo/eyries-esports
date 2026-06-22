@@ -358,22 +358,33 @@ function renderGameLogos() {
   });
 }
 
-function renderTournamentCard(t, index, registrationLink) {
+function renderTournamentCard(t, index) {
   const prefix = `tournaments.list.${index}`;
   const statusLabel = { upcoming: "Upcoming", ongoing: "Ongoing", past: "Past" }[t.status] || "Upcoming";
+  const link = t.registrationLink || "";
 
-  // Register Now shows on every card (any status), as long as an admin
-  // has actually set a registration link — no point linking to nothing.
-  const registerBtn = registrationLink
-    ? `<a class="tournament-register-btn" href="${registrationLink}" target="_blank" rel="noopener">Register Now</a>`
-    : "";
+  // Admins always see a registration-link control on the card — either the
+  // "Register Now" button itself (click to open the editor) when a link is
+  // already set, or a dashed "+ Add registration link" placeholder when it
+  // isn't. Non-admin visitors only ever see "Register Now", and only once
+  // a real link exists — never a dead/broken button.
+  let registerArea;
+  if (isAdminUser()) {
+    registerArea = link
+      ? `<a class="tournament-register-btn" href="${link}" target="_blank" rel="noopener" data-edit-field="${prefix}.registrationLink" data-edit-type="text" data-edit-label="Edit this event's registration link">Register Now</a>`
+      : `<span class="tournament-add-reglink-btn" data-edit-field="${prefix}.registrationLink" data-edit-type="text" data-edit-label="Add this event's registration link">+ Add registration link</span>`;
+  } else {
+    registerArea = link
+      ? `<a class="tournament-register-btn" href="${link}" target="_blank" rel="noopener">Register Now</a>`
+      : "";
+  }
 
   const deleteBtn = isAdminUser()
     ? `<button class="tournament-delete-btn" data-delete-tournament="${index}">Delete</button>`
     : "";
 
-  const bottomRow = (registerBtn || deleteBtn)
-    ? `<div class="tournament-bottom-row">${deleteBtn}${registerBtn}</div>`
+  const bottomRow = (registerArea || deleteBtn)
+    ? `<div class="tournament-bottom-row">${deleteBtn}${registerArea}</div>`
     : "";
 
   return `
@@ -412,16 +423,6 @@ function renderTournaments() {
     chip.classList.toggle("active", chip.dataset.status === currentStatusFilter);
   });
 
-  const registrationLink = (siteContent.tournaments && siteContent.tournaments.registrationLink) || "";
-  const regLinkRow = document.getElementById("regLinkRow");
-  const regLinkValue = document.getElementById("regLinkValue");
-  if (isAdminUser()) {
-    regLinkRow.classList.remove("hidden");
-    regLinkValue.textContent = registrationLink || "[Paste Google Form link]";
-  } else {
-    regLinkRow.classList.add("hidden");
-  }
-
   const allTournaments = (siteContent.tournaments && siteContent.tournaments.list) || [];
 
   const filtered = allTournaments
@@ -431,7 +432,7 @@ function renderTournaments() {
 
   const listEl = document.getElementById("tournamentList");
   listEl.innerHTML = filtered.length
-    ? filtered.map(({ t, i }) => renderTournamentCard(t, i, registrationLink)).join("")
+    ? filtered.map(({ t, i }) => renderTournamentCard(t, i)).join("")
     : `<div class="empty-note">No ${currentStatusFilter === "all" ? "" : currentStatusFilter + " "}tournaments for this game yet.</div>`;
 
   attachEditHandlers();
@@ -735,7 +736,7 @@ const blankItemFor = {
   achievements: () => ({ title: "", event: "", year: "", description: "", photoUrl: "" }),
   player: () => ({ name: "", gamingId: "", role: "", photoUrl: "" }),
   announcement: () => ({ title: "", body: "", date: "" }),
-  tournament: () => ({ name: "", game: currentTournamentGame, status: "upcoming", date: "", description: "", result: "", photoUrl: "" })
+  tournament: () => ({ name: "", game: currentTournamentGame, status: "upcoming", date: "", description: "", result: "", photoUrl: "", registrationLink: "" })
 };
 
 document.querySelectorAll(".admin-add-btn").forEach((btn) => {
@@ -825,8 +826,10 @@ function openEditModal(el) {
   activeEditType = el.dataset.editType;
 
   const currentValue = getValueByPath(siteContent, activeEditField) || "";
-  editModalTitle.textContent =
-    activeEditType === "photo" ? "Paste a photo URL" : `Edit: ${activeEditField}`;
+  const friendlyLabel = el.dataset.editLabel;
+  editModalTitle.textContent = friendlyLabel
+    ? friendlyLabel
+    : activeEditType === "photo" ? "Paste a photo URL" : `Edit: ${activeEditField}`;
   editModalTextarea.value = currentValue;
   editModalTextarea.placeholder =
     activeEditType === "photo" ? "https://example.com/photo.jpg" : "";
@@ -849,7 +852,19 @@ editModalSave.addEventListener("click", async () => {
       body: JSON.stringify(siteContent)
     });
     showToast("Saved.");
-    renderAll();
+
+    // Re-render whichever view is actually visible right now. The main
+    // scrollable page, the Tournaments overlay, and the Achievements
+    // overlay each have their own render function — renderAll() alone
+    // doesn't touch the other two, so without this an edit made while
+    // an overlay is open would save correctly but not visibly update.
+    if (!tournamentsOverlay.classList.contains("hidden")) {
+      renderTournaments();
+    } else if (!achievementsOverlay.classList.contains("hidden")) {
+      renderAchievements();
+    } else {
+      renderAll();
+    }
   } catch (err) {
     showToast(err.message || "Could not save. Try again.");
   }
