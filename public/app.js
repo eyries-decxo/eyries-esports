@@ -362,35 +362,43 @@ function renderTournamentCard(t, index, registrationLink) {
   const prefix = `tournaments.list.${index}`;
   const statusLabel = { upcoming: "Upcoming", ongoing: "Ongoing", past: "Past" }[t.status] || "Upcoming";
 
-  const adminRow = isAdminUser()
-    ? `<div class="tournament-admin-row">
-         <button class="tournament-delete-btn" data-delete-tournament="${index}">Delete</button>
-       </div>`
-    : "";
-
-  // Register button only shows if an admin has set a registration link, and
+  // Register Now only shows if an admin has set a registration link, and
   // only really makes sense for events you can still sign up for.
   const showRegister = registrationLink && (t.status === "upcoming" || t.status === "ongoing");
   const registerBtn = showRegister
-    ? `<a class="tournament-register-btn" href="${registrationLink}" target="_blank" rel="noopener">Reg Now</a>`
+    ? `<a class="tournament-register-btn" href="${registrationLink}" target="_blank" rel="noopener">Register Now</a>`
+    : "";
+
+  const deleteBtn = isAdminUser()
+    ? `<button class="tournament-delete-btn" data-delete-tournament="${index}">Delete</button>`
+    : "";
+
+  const bottomRow = (registerBtn || deleteBtn)
+    ? `<div class="tournament-bottom-row">${deleteBtn}${registerBtn}</div>`
     : "";
 
   return `
     <div class="tournament-card status-${t.status}">
-      <div class="tournament-top-row">
-        <div>
-          <div class="tournament-name" data-edit-field="${prefix}.name" data-edit-type="text">${t.name || "[Tournament name]"}</div>
-          <div class="tournament-game-tag">${t.game || "BGMI"}</div>
+      <div class="tournament-main-row">
+        <div class="tournament-photo" data-edit-field="${prefix}.photoUrl" data-edit-type="photo" ${photoStyle(t.photoUrl)}>
+          ${t.photoUrl ? "" : `<span class="tournament-photo-placeholder">Event photo</span>`}
         </div>
-        <span class="tournament-status-badge ${t.status}" data-edit-field="${prefix}.status" data-edit-type="text">${statusLabel}</span>
+        <div class="tournament-info-col">
+          <div class="tournament-top-row">
+            <div>
+              <div class="tournament-name" data-edit-field="${prefix}.name" data-edit-type="text">${t.name || "[Tournament name]"}</div>
+              <div class="tournament-game-tag">${t.game || "BGMI"}</div>
+            </div>
+            <span class="tournament-status-badge ${t.status}" data-edit-field="${prefix}.status" data-edit-type="text">${statusLabel}</span>
+          </div>
+          <div class="tournament-date" data-edit-field="${prefix}.date" data-edit-type="text">${t.date || "[Date]"}</div>
+          <div class="tournament-desc" data-edit-field="${prefix}.description" data-edit-type="textarea">${t.description || "[Description]"}</div>
+        </div>
       </div>
-      <div class="tournament-date" data-edit-field="${prefix}.date" data-edit-type="text">${t.date || "[Date]"}</div>
-      <div class="tournament-desc" data-edit-field="${prefix}.description" data-edit-type="textarea">${t.description || "[Description]"}</div>
       ${t.result || isAdminUser()
         ? `<div class="tournament-result" data-edit-field="${prefix}.result" data-edit-type="text">${t.result || "[Add result — optional]"}</div>`
         : ""}
-      ${registerBtn}
-      ${adminRow}
+      ${bottomRow}
     </div>
   `;
 }
@@ -728,7 +736,7 @@ const blankItemFor = {
   achievements: () => ({ title: "", event: "", year: "", description: "", photoUrl: "" }),
   player: () => ({ name: "", gamingId: "", role: "", photoUrl: "" }),
   announcement: () => ({ title: "", body: "", date: "" }),
-  tournament: () => ({ name: "", game: currentTournamentGame, status: "upcoming", date: "", description: "", result: "" })
+  tournament: () => ({ name: "", game: currentTournamentGame, status: "upcoming", date: "", description: "", result: "", photoUrl: "" })
 };
 
 document.querySelectorAll(".admin-add-btn").forEach((btn) => {

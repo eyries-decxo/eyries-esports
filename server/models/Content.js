@@ -66,7 +66,8 @@ const tournamentSchema = new mongoose.Schema(
     status: { type: String, enum: ["upcoming", "ongoing", "past"], default: "upcoming" },
     date: { type: String, default: "" },        // free text, e.g. "12 July 2026" or "12-15 July"
     description: { type: String, default: "" },
-    result: { type: String, default: "" }        // optional, e.g. "Eyries finished 2nd" — mainly for past events
+    result: { type: String, default: "" },       // optional, e.g. "Eyries finished 2nd" — mainly for past events
+    photoUrl: { type: String, default: "" }      // event preview image, admin-pasted URL
   },
   { _id: false }
 );

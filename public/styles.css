@@ -721,7 +721,6 @@ a{color:inherit;text-decoration:none;}
 
 .tournament-register-btn{
   display:inline-block;
-  margin-top:12px;
   font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; letter-spacing:0.05em;
   text-transform:uppercase;
   padding:9px 18px;
@@ -736,14 +735,35 @@ a{color:inherit;text-decoration:none;}
   background:linear-gradient(155deg, var(--panel), var(--panel-2));
   border:1px solid var(--line);
   border-radius:12px;
-  padding:18px;
+  padding:16px;
   clip-path:polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
 }
 .tournament-card.status-ongoing{border-color:var(--cyan); box-shadow:0 0 0 1px rgba(125,211,252,0.15);}
-.tournament-top-row{
-  display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;
+
+.tournament-main-row{
+  display:flex; gap:14px;
 }
-.tournament-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16.5px; color:#fff;}
+.tournament-photo{
+  flex-shrink:0;
+  width:84px; height:84px;
+  border-radius:10px;
+  background:var(--void);
+  border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  background-size:cover; background-position:center;
+  overflow:hidden;
+}
+.tournament-photo-placeholder{
+  font-family:'Rajdhani',sans-serif; font-size:9.5px; font-weight:600;
+  color:var(--text-dim); letter-spacing:0.04em; text-transform:uppercase;
+  text-align:center; padding:0 6px;
+}
+.tournament-info-col{flex:1; min-width:0;}
+
+.tournament-top-row{
+  display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;
+}
+.tournament-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px; color:#fff; line-height:1.25;}
 .tournament-game-tag{
   font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--cyan); margin-top:3px;
 }
@@ -756,18 +776,19 @@ a{color:inherit;text-decoration:none;}
 .tournament-status-badge.upcoming{background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.25);}
 .tournament-status-badge.ongoing{background:var(--cyan); color:var(--void);}
 .tournament-status-badge.past{background:transparent; color:var(--text-dim); border:1px solid var(--line);}
-.tournament-date{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:8px;}
-.tournament-desc{font-size:13px; color:var(--text-dim); line-height:1.55;}
+.tournament-date{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); margin-bottom:6px;}
+.tournament-desc{font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+
 .tournament-result{
   margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
   font-size:12.5px; color:var(--cyan); font-family:'JetBrains Mono',monospace;
 }
-.tournament-admin-row{
-  display:flex; gap:8px; margin-top:12px;
+.tournament-bottom-row{
+  display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px;
 }
 .tournament-delete-btn{
   font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.04em;
-  padding:6px 12px; border-radius:6px;
+  padding:8px 12px; border-radius:6px;
   background:var(--void); border:1px solid var(--line); color:var(--text-dim);
   text-transform:uppercase;
 }
