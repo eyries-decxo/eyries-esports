@@ -573,9 +573,12 @@ function photoStyle(photoUrl) {
   return photoUrl ? `style="background-image:url('${photoUrl}')"` : "";
 }
 
-function renderPersonCard(person, { editPrefix } = {}) {
+function renderPersonCard(person, { editPrefix, deleteKey } = {}) {
   const editAttrs = editPrefix
     ? `data-edit-group="${editPrefix}"`
+    : "";
+  const deleteBtn = deleteKey && isAdminUser()
+    ? `<button class="person-delete-btn" data-delete-person="${deleteKey}">Delete</button>`
     : "";
   return `
     <div class="person-card" ${editAttrs}>
@@ -589,6 +592,7 @@ function renderPersonCard(person, { editPrefix } = {}) {
         </div>
       </div>
       <div class="person-bio" data-edit-field="${editPrefix}.bio" data-edit-type="textarea">${person.bio || "[Bio]"}</div>
+      ${deleteBtn}
     </div>
   `;
 }
@@ -730,12 +734,12 @@ function renderAll() {
 
   // Co-founders
   document.getElementById("coFoundersGrid").innerHTML = (c.coFounders || [])
-    .map((p, i) => renderPersonCard(p, { editPrefix: `coFounders.${i}` }))
+    .map((p, i) => renderPersonCard(p, { editPrefix: `coFounders.${i}`, deleteKey: `coFounders.${i}` }))
     .join("");
 
   // Team
   document.getElementById("teamGrid").innerHTML = (c.team || [])
-    .map((p, i) => renderPersonCard(p, { editPrefix: `team.${i}` }))
+    .map((p, i) => renderPersonCard(p, { editPrefix: `team.${i}`, deleteKey: `team.${i}` }))
     .join("");
 
   // Achievements
@@ -777,6 +781,22 @@ function renderAll() {
 
   attachEditHandlers();
 
+  document.querySelectorAll("[data-delete-person]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const [arrayName, idxStr] = btn.dataset.deletePerson.split(".");
+      const idx = parseInt(idxStr, 10);
+      if (!confirm("Delete this person? This can't be undone.")) return;
+      siteContent[arrayName].splice(idx, 1);
+      try {
+        await apiRequest("/content", { method: "PUT", body: JSON.stringify(siteContent) });
+        showToast("Deleted.");
+        renderAll();
+      } catch (err) {
+        showToast(err.message || "Could not delete. Try again.");
+      }
+    });
+  });
+
   // Show admin-only "add" buttons
   document.querySelectorAll(".admin-add-btn").forEach((btn) => {
     btn.classList.toggle("hidden", !isAdminUser());
@@ -797,6 +817,7 @@ function rowHtml(label, value, field) {
    --------------------------------------------------------------------- */
 const blankItemFor = {
   team: () => ({ name: "", title: "", bio: "", photoUrl: "" }),
+  coFounder: () => ({ name: "", title: "", bio: "", photoUrl: "" }),
   achievements: () => ({ title: "", event: "", year: "", description: "", photoUrl: "" }),
   highlight: () => ({ title: "", description: "", photoUrl: "" }),
   player: () => ({ name: "", gamingId: "", role: "", photoUrl: "" }),
@@ -813,6 +834,9 @@ document.querySelectorAll(".admin-add-btn").forEach((btn) => {
     if (kind === "team") {
       siteContent.team = siteContent.team || [];
       siteContent.team.push(makeBlank());
+    } else if (kind === "coFounder") {
+      siteContent.coFounders = siteContent.coFounders || [];
+      siteContent.coFounders.push(makeBlank());
     } else if (kind === "achievements") {
       siteContent.achievements = siteContent.achievements || [];
       siteContent.achievements.push(makeBlank());
