@@ -1,6 +1,7 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
+  command = "npm install"
 
 # Every request to /api/* gets routed to our single Express function.
 # Example: a browser fetch("/api/content") becomes a call into
