@@ -4,38 +4,53 @@ const bcrypt = require("bcryptjs");
 const User = require("./models/User");
 const Content = require("./models/Content");
 
-
 const placeholderContent = {
   _id: "site-content",
   hero: {
     tagline: "Multi-front roster // 4 active squads",
     headline: "Fly the Eyries colors",
-    subtext: "Live scores, squads, and gear across BGMI, Valorant, PES & Free Fire."
+    subtext:
+      "Live scores, squads, and gear across BGMI, Valorant, PES & Free Fire.",
   },
   founder: {
     name: "[Founder name — edit in admin panel]",
     title: "Founder & CEO",
     bio: "[Add the founder's bio here. A few sentences about their background, vision for Eyries Esports, and what led them to start the team.]",
-    photoUrl: ""
+    photoUrl: "",
   },
   coFounders: [
     {
       name: "[Co-founder name]",
       title: "Co-Founder & COO",
       bio: "[Add this co-founder's bio here.]",
-      photoUrl: ""
+      photoUrl: "",
     },
     {
       name: "[Co-founder name]",
       title: "Co-Founder & Head of Operations",
       bio: "[Add this co-founder's bio here.]",
-      photoUrl: ""
-    }
+      photoUrl: "",
+    },
   ],
   team: [
-    { name: "[Team member name]", title: "Team Manager", bio: "[Short bio.]", photoUrl: "" },
-    { name: "[Team member name]", title: "Content Lead", bio: "[Short bio.]", photoUrl: "" },
-    { name: "[Team member name]", title: "Community Manager", bio: "[Short bio.]", photoUrl: "" }
+    {
+      name: "[Team member name]",
+      title: "Team Manager",
+      bio: "[Short bio.]",
+      photoUrl: "",
+    },
+    {
+      name: "[Team member name]",
+      title: "Content Lead",
+      bio: "[Short bio.]",
+      photoUrl: "",
+    },
+    {
+      name: "[Team member name]",
+      title: "Community Manager",
+      bio: "[Short bio.]",
+      photoUrl: "",
+    },
   ],
   achievements: [
     {
@@ -43,43 +58,67 @@ const placeholderContent = {
       event: "[Event/league name]",
       year: "2025",
       description: "[A line or two about this achievement.]",
-      photoUrl: ""
+      photoUrl: "",
     },
     {
       title: "[Another achievement]",
       event: "[Event/league name]",
       year: "2024",
       description: "[A line or two about this achievement.]",
-      photoUrl: ""
-    }
+      photoUrl: "",
+    },
   ],
   squads: {
     BGMI: {
       players: [
-        { name: "[Player name]", gamingId: "[In-game ID]", role: "IGL", photoUrl: "" }
+        {
+          name: "[Player name]",
+          gamingId: "[In-game ID]",
+          role: "IGL",
+          photoUrl: "",
+        },
       ],
       announcements: [
-        { title: "[Announcement title]", body: "[Details here.]", date: "2026" }
-      ]
+        {
+          title: "[Announcement title]",
+          body: "[Details here.]",
+          date: "2026",
+        },
+      ],
     },
     VALORANT: {
       players: [
-        { name: "[Player name]", gamingId: "[In-game ID]", role: "Duelist", photoUrl: "" }
+        {
+          name: "[Player name]",
+          gamingId: "[In-game ID]",
+          role: "Duelist",
+          photoUrl: "",
+        },
       ],
-      announcements: []
+      announcements: [],
     },
     PES: {
       players: [
-        { name: "[Player name]", gamingId: "[In-game ID]", role: "Forward", photoUrl: "" }
+        {
+          name: "[Player name]",
+          gamingId: "[In-game ID]",
+          role: "Forward",
+          photoUrl: "",
+        },
       ],
-      announcements: []
+      announcements: [],
     },
     "FREE FIRE": {
       players: [
-        { name: "[Player name]", gamingId: "[In-game ID]", role: "Rusher", photoUrl: "" }
+        {
+          name: "[Player name]",
+          gamingId: "[In-game ID]",
+          role: "Rusher",
+          photoUrl: "",
+        },
       ],
-      announcements: []
-    }
+      announcements: [],
+    },
   },
   contact: {
     email: "contact@eyriesesports.example",
@@ -88,47 +127,73 @@ const placeholderContent = {
     instagram: "https://instagram.com/eyriesesports",
     twitter: "https://twitter.com/eyriesesports",
     youtube: "https://youtube.com/@eyriesesports",
-    discord: "https://discord.gg/eyriesesports"
-  }
+    discord: "https://discord.gg/eyriesesports",
+  },
 };
 
 async function seed() {
-  if (!process.env.MONGODB_URI) {
-    console.error("❌ MONGODB_URI not set. Fill in your .env file first.");
+  try {
+    if (!process.env.MONGODB_URI) {
+      console.error("❌ MONGODB_URI not set. Fill in your .env file first.");
+      process.exit(1);
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("✅ Connected to MongoDB");
+
+    // Admin user
+    const adminUsername = (
+      process.env.SEED_ADMIN_USER || "user_admin"
+    ).trim().toLowerCase();
+
+    const adminPassword =
+      process.env.SEED_ADMIN_PASSWORD || "your_admin_Password";
+
+    const existingAdmin = await User.findOne({
+      username: adminUsername,
+    });
+
+    if (existingAdmin) {
+      console.log(
+        `ℹ️ Admin "${adminUsername}" already exists — skipping creation.`
+      );
+    } else {
+      const passwordHash = await bcrypt.hash(adminPassword, 10);
+
+      await User.create({
+        username: adminUsername,
+        passwordHash,
+        role: "admin",
+      });
+
+      console.log(
+        `✅ Created admin account: "${adminUsername}"`
+      );
+    }
+
+    // Site content
+    const existingContent = await Content.findById("site-content");
+
+    if (existingContent) {
+      console.log(
+        "ℹ️ Site content already exists — skipping placeholder creation."
+      );
+    } else {
+      await Content.create(placeholderContent);
+
+      console.log(
+        "✅ Created placeholder site content. Edit it via the admin panel."
+      );
+    }
+
+    console.log("\n🎉 Database seeding completed successfully.\n");
+
+    await mongoose.disconnect();
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Seed failed:", err);
     process.exit(1);
   }
-
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log("✅ Connected to MongoDB");
-
-  // --- Admin user ---
-  const adminUsername = (process.env.SEED_ADMIN_USERNAME || "user_admin").trim().toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "your_admin_Password";
-
-  const existingAdmin = await User.findOne({ username: adminUsername });
-  if (existingAdmin) {
-    console.log(`ℹ️  Admin "${adminUsername}" already exists — skipping creation.`);
-  } else {
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
-    await User.create({ username: adminUsername, passwordHash, role: "admin" });
-    console.log(`✅ Created admin account: "${adminUsername}" (password as set in .env)`);
-  }
-
-  // --- Starter content ---
-  const existingContent = await Content.findById("site-content");
-  if (existingContent) {
-    console.log("ℹ️  Site content already exists — skipping placeholder creation.");
-  } else {
-    await Content.create(placeholderContent);
-    console.log("✅ Created placeholder site content. Edit it via the admin panel.");
-  }
-
-  console.log("\nDone. You can now log in with the admin account above.\n");
-  await mongoose.disconnect();
-  process.exit(0);
 }
 
-seed().catch((err) => {
-  console.error("❌ Seed failed:", err);
-  process.exit(1);
-});
+seed();
