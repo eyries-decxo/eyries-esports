@@ -4,19 +4,6 @@ const bcrypt = require("bcryptjs");
 const User = require("./models/User");
 const Content = require("./models/Content");
 
-/*
-  SEED SCRIPT
-  -----------
-  Run once with: npm run seed
-
-  Creates:
-  1. The first admin account, using SEED_ADMIN_USERNAME / SEED_ADMIN_PASSWORD
-     from your .env file. If that admin already exists, it's skipped
-     (safe to run more than once).
-  2. A starter content document with clearly-labeled placeholder text,
-     so the site has something to display before you edit it in the
-     admin panel.
-*/
 
 const placeholderContent = {
   _id: "site-content",
@@ -116,7 +103,7 @@ async function seed() {
 
   // --- Admin user ---
   const adminUsername = (process.env.SEED_ADMIN_USERNAME || "user_admin").trim().toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "your_admin_Password123";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "your_admin_Password";
 
   const existingAdmin = await User.findOne({ username: adminUsername });
   if (existingAdmin) {
