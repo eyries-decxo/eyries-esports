@@ -115,8 +115,8 @@ async function seed() {
   console.log("✅ Connected to MongoDB");
 
   // --- Admin user ---
-  const adminUsername = (process.env.SEED_ADMIN_USERNAME || "admin").trim().toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "ChangeThisPassword123";
+  const adminUsername = (process.env.SEED_ADMIN_USERNAME || "user_admin").trim().toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "your_admin_Password123";
 
   const existingAdmin = await User.findOne({ username: adminUsername });
   if (existingAdmin) {
