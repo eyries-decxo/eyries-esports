@@ -54,6 +54,18 @@ router.get("/", async (req, res) => {
       needsSave = true;
     }
 
+    // Same safe backfill for the 3 stacked hero.photos — older documents
+    // won't have this yet.
+    if (!content.hero || !Array.isArray(content.hero.photos)) {
+      content.hero.photos = ["", "", ""];
+      needsSave = true;
+    } else if (content.hero.photos.length < 3) {
+      while (content.hero.photos.length < 3) {
+        content.hero.photos.push("");
+      }
+      needsSave = true;
+    }
+
     // Same safe backfill for highlights — older documents won't have this.
     if (!Array.isArray(content.highlights)) {
       content.highlights = [];

@@ -579,14 +579,16 @@ function renderPersonCard(person, { editPrefix } = {}) {
     : "";
   return `
     <div class="person-card" ${editAttrs}>
-      <div class="person-photo" data-edit-field="${editPrefix}.photoUrl" data-edit-type="photo" ${photoStyle(person.photoUrl)}>
-        ${person.photoUrl ? "" : initials(person.name)}
+      <div class="person-top-row">
+        <div class="person-photo" data-edit-field="${editPrefix}.photoUrl" data-edit-type="photo" ${photoStyle(person.photoUrl)}>
+          ${person.photoUrl ? "" : initials(person.name)}
+        </div>
+        <div class="person-info">
+          <div class="person-name" data-edit-field="${editPrefix}.name" data-edit-type="text">${person.name || "[Name]"}</div>
+          <div class="person-title" data-edit-field="${editPrefix}.title" data-edit-type="text">${person.title || "[Title]"}</div>
+        </div>
       </div>
-      <div class="person-info">
-        <div class="person-name" data-edit-field="${editPrefix}.name" data-edit-type="text">${person.name || "[Name]"}</div>
-        <div class="person-title" data-edit-field="${editPrefix}.title" data-edit-type="text">${person.title || "[Title]"}</div>
-        <div class="person-bio" data-edit-field="${editPrefix}.bio" data-edit-type="textarea">${person.bio || "[Bio]"}</div>
-      </div>
+      <div class="person-bio" data-edit-field="${editPrefix}.bio" data-edit-type="textarea">${person.bio || "[Bio]"}</div>
     </div>
   `;
 }
@@ -610,15 +612,21 @@ function renderTrophyCard(item, index) {
   `;
 }
 
-function renderPlayerCard(player, prefix) {
+function renderPlayerCard(player, prefix, index) {
+  const deleteBtn = isAdminUser()
+    ? `<button class="player-delete-btn" data-delete-player="${index}">Delete</button>`
+    : "";
   return `
     <div class="player-card-sq">
       <div class="player-photo-sq" data-edit-field="${prefix}.photoUrl" data-edit-type="photo" ${photoStyle(player.photoUrl)}>
         ${player.photoUrl ? "" : initials(player.name)}
       </div>
-      <div class="player-name-sq" data-edit-field="${prefix}.name" data-edit-type="text">${player.name || "[Player name]"}</div>
-      <div class="player-gamingid-sq" data-edit-field="${prefix}.gamingId" data-edit-type="text">${player.gamingId || "[Gaming ID]"}</div>
-      <div class="player-role-sq" data-edit-field="${prefix}.role" data-edit-type="text">${player.role || "[Role]"}</div>
+      <div class="player-info-sq">
+        <div class="player-name-sq" data-edit-field="${prefix}.name" data-edit-type="text">${player.name || "[Player name]"}</div>
+        <div class="player-gamingid-sq" data-edit-field="${prefix}.gamingId" data-edit-type="text">${player.gamingId || "[Gaming ID]"}</div>
+        <div class="player-role-sq" data-edit-field="${prefix}.role" data-edit-type="text">${player.role || "[Role]"}</div>
+      </div>
+      ${deleteBtn}
     </div>
   `;
 }
@@ -645,7 +653,7 @@ function renderSquads() {
 
   const players = squad.players || [];
   document.getElementById("playerGrid").innerHTML = players.length
-    ? players.map((p, i) => renderPlayerCard(p, `${squadPrefix}.players.${i}`)).join("")
+    ? players.map((p, i) => renderPlayerCard(p, `${squadPrefix}.players.${i}`, i)).join("")
     : `<div class="empty-note">No players added for ${currentGame} yet.</div>`;
 
   const announcements = squad.announcements || [];
@@ -654,6 +662,21 @@ function renderSquads() {
     : `<div class="empty-note">No announcements for ${currentGame} yet.</div>`;
 
   attachEditHandlers();
+
+  document.querySelectorAll("[data-delete-player]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const idx = parseInt(btn.dataset.deletePlayer, 10);
+      if (!confirm("Delete this player? This can't be undone.")) return;
+      siteContent.squads[currentGame].players.splice(idx, 1);
+      try {
+        await apiRequest("/content", { method: "PUT", body: JSON.stringify(siteContent) });
+        showToast("Player deleted.");
+        renderSquads();
+      } catch (err) {
+        showToast(err.message || "Could not delete. Try again.");
+      }
+    });
+  });
 
   document.querySelectorAll('.admin-add-btn[data-add="player"], .admin-add-btn[data-add="announcement"]').forEach((btn) => {
     btn.classList.toggle("hidden", !isAdminUser());
@@ -687,6 +710,20 @@ function renderAll() {
     heroJersey.style.backgroundImage = "";
     heroJersey.innerHTML = `<span class="hero-jersey-placeholder">Jersey photo</span>`;
   }
+
+  // 3 stacked photo-only images below the jersey, above About — no text,
+  // each admin-editable via the same paste-URL pattern used everywhere else.
+  const heroPhotos = (c.hero?.photos && c.hero.photos.length ? c.hero.photos : ["", "", ""]);
+  document.getElementById("heroPhotoStack").innerHTML = [0, 1, 2]
+    .map((i) => {
+      const url = heroPhotos[i] || "";
+      return `
+        <div class="hero-stack-photo" data-edit-field="hero.photos.${i}" data-edit-type="photo" ${photoStyle(url)}>
+          ${url ? "" : `<span class="hero-stack-photo-placeholder">Photo ${i + 1}</span>`}
+        </div>
+      `;
+    })
+    .join("");
 
   // Founder
   document.getElementById("founderCard").innerHTML = renderPersonCard(c.founder || {}, { editPrefix: "founder" });

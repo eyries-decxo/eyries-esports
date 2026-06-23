@@ -299,7 +299,7 @@ a{color:inherit;text-decoration:none;}
 }
 .hero-jersey{
   flex:1;
-  min-height:160px;
+  aspect-ratio:1080/1350;
   border-radius:14px;
   border:1px solid var(--line);
   background:linear-gradient(155deg, var(--panel), var(--panel-2));
@@ -314,7 +314,7 @@ a{color:inherit;text-decoration:none;}
   color:var(--text-dim); text-transform:uppercase;
 }
 @media (min-width:560px){
-  .hero-jersey{min-height:220px; max-width:280px;}
+  .hero-jersey{max-width:280px;}
 }
 
 .scroll-cue{
@@ -326,6 +326,29 @@ a{color:inherit;text-decoration:none;}
 }
 .scroll-cue svg{width:16px;height:16px;}
 @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
+
+/* ---------- HERO PHOTO STACK (3 photo-only images, below jersey) ---------- */
+.hero-photo-stack{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:28px;
+}
+.hero-stack-photo{
+  width:100%;
+  max-width:423px;
+  aspect-ratio:423/315;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:linear-gradient(155deg, var(--panel), var(--panel-2));
+  background-size:cover;
+  background-position:center;
+  display:flex; align-items:center; justify-content:center;
+}
+.hero-stack-photo-placeholder{
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;
+  color:var(--text-dim); text-transform:uppercase;
+}
 
 .panel-eyebrow{
   font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.16em;
@@ -352,9 +375,15 @@ a{color:inherit;text-decoration:none;}
   border-radius:12px;
   padding:20px;
   display:flex;
-  gap:16px;
+  flex-direction:column;
+  gap:14px;
   position:relative;
   clip-path:polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+.person-top-row{
+  display:flex;
+  align-items:center;
+  gap:16px;
 }
 .person-photo{
   width:76px;height:76px;border-radius:10px;flex-shrink:0;
@@ -368,7 +397,7 @@ a{color:inherit;text-decoration:none;}
 }
 .person-info{flex:1;min-width:0;}
 .person-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;}
-.person-title{font-size:12px;color:var(--cyan);margin:2px 0 8px;font-weight:500;}
+.person-title{font-size:12px;color:var(--cyan);margin-top:2px;font-weight:500;}
 .person-bio{font-size:13px;color:var(--text-dim);line-height:1.55;}
 
 .people-grid{
@@ -606,23 +635,34 @@ a{color:inherit;text-decoration:none;}
   background:linear-gradient(155deg, var(--panel), var(--panel-2));
   border:1px solid var(--line);
   border-radius:12px;
-  padding:18px 14px;
-  text-align:center;
+  padding:16px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  text-align:left;
   clip-path:polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
 }
 .player-photo-sq{
-  width:64px;height:64px;border-radius:50%;margin:0 auto 12px;
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;
   background:radial-gradient(circle, rgba(59,130,246,0.22), rgba(5,8,15,0.9));
   border:2px solid var(--line);
   display:flex;align-items:center;justify-content:center;
   font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--cyan);
   background-size:cover;background-position:center;
 }
+.player-info-sq{flex:1;min-width:0;}
 .player-name-sq{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;}
 .player-gamingid-sq{
   font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--cyan);margin-top:3px;
 }
 .player-role-sq{font-size:11px;color:var(--text-dim);margin-top:4px;}
+.player-delete-btn{
+  font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.04em;
+  padding:8px 12px; border-radius:6px; flex-shrink:0;
+  background:var(--void); border:1px solid var(--line); color:var(--text-dim);
+  text-transform:uppercase;
+}
+.player-delete-btn:hover{border-color:#fff; color:#fff;}
 
 .announcement-list{display:flex;flex-direction:column;gap:12px;}
 .announcement-card{
