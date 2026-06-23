@@ -573,17 +573,18 @@ function photoStyle(photoUrl) {
   return photoUrl ? `style="background-image:url('${photoUrl}')"` : "";
 }
 
-function renderPersonCard(person, { editPrefix, deleteKey } = {}) {
+function renderPersonCard(person, { editPrefix, deleteKey, large } = {}) {
   const editAttrs = editPrefix
     ? `data-edit-group="${editPrefix}"`
     : "";
   const deleteBtn = deleteKey && isAdminUser()
     ? `<button class="person-delete-btn" data-delete-person="${deleteKey}">Delete</button>`
     : "";
+  const photoClass = large ? "person-photo person-photo-lg" : "person-photo";
   return `
     <div class="person-card" ${editAttrs}>
       <div class="person-top-row">
-        <div class="person-photo" data-edit-field="${editPrefix}.photoUrl" data-edit-type="photo" ${photoStyle(person.photoUrl)}>
+        <div class="${photoClass}" data-edit-field="${editPrefix}.photoUrl" data-edit-type="photo" ${photoStyle(person.photoUrl)}>
           ${person.photoUrl ? "" : initials(person.name)}
         </div>
         <div class="person-info">
@@ -730,11 +731,11 @@ function renderAll() {
     .join("");
 
   // Founder
-  document.getElementById("founderCard").innerHTML = renderPersonCard(c.founder || {}, { editPrefix: "founder" });
+  document.getElementById("founderCard").innerHTML = renderPersonCard(c.founder || {}, { editPrefix: "founder", large: true });
 
   // Co-founders
   document.getElementById("coFoundersGrid").innerHTML = (c.coFounders || [])
-    .map((p, i) => renderPersonCard(p, { editPrefix: `coFounders.${i}`, deleteKey: `coFounders.${i}` }))
+    .map((p, i) => renderPersonCard(p, { editPrefix: `coFounders.${i}`, deleteKey: `coFounders.${i}`, large: true }))
     .join("");
 
   // Team
