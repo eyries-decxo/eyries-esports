@@ -206,8 +206,19 @@ function renderGameLogos(){
    `trueIndex` = position in siteContent.tournaments.list (never changes with filtering). */
 function renderTournamentCard(t, trueIndex){
   const prefix = `tournaments.list.${trueIndex}`;
-  const statusLabel = { upcoming:"Upcoming", ongoing:"Ongoing", past:"Past" }[t.status] || "Upcoming";
+  const status = t.status || "upcoming";
+  const statusLabel = { upcoming:"Upcoming", ongoing:"Ongoing", past:"Past" }[status] || "Upcoming";
   const link = t.registrationLink || "";
+
+  /* Status control — admins get a <select> so status is always valid;
+     fans see the plain badge only. */
+  const statusControl = isAdminUser()
+    ? `<select class="tournament-status-select status-${status}" data-tournament-status="${trueIndex}">
+         <option value="upcoming" ${status==="upcoming"?"selected":""}>Upcoming</option>
+         <option value="ongoing"  ${status==="ongoing" ?"selected":""}>Ongoing</option>
+         <option value="past"     ${status==="past"    ?"selected":""}>Past</option>
+       </select>`
+    : `<span class="tournament-status-badge ${status}">${statusLabel}</span>`;
 
   let registerArea;
   if(isAdminUser()){
@@ -230,7 +241,7 @@ function renderTournamentCard(t, trueIndex){
     ? `<div class="tournament-bottom-row">${deleteBtn}${registerArea}</div>` : "";
 
   return `
-    <div class="tournament-card status-${t.status}">
+    <div class="tournament-card status-${status}" data-card-index="${trueIndex}">
       <div class="tournament-main-row">
         <div class="tournament-photo" data-edit-field="${prefix}.photoUrl" data-edit-type="photo" ${photoStyle(t.photoUrl)}>
           ${t.photoUrl ? "" : `<span class="tournament-photo-placeholder">Event photo</span>`}
@@ -241,8 +252,7 @@ function renderTournamentCard(t, trueIndex){
               <div class="tournament-name" data-edit-field="${prefix}.name" data-edit-type="text">${t.name || "[Tournament name]"}</div>
               <div class="tournament-game-tag">${t.game || currentTournamentGame}</div>
             </div>
-            <span class="tournament-status-badge ${t.status}"
-                  data-edit-field="${prefix}.status" data-edit-type="text">${statusLabel}</span>
+            ${statusControl}
           </div>
           <div class="tournament-date" data-edit-field="${prefix}.date" data-edit-type="text">${t.date || "[Date]"}</div>
           <div class="tournament-desc" data-edit-field="${prefix}.description" data-edit-type="textarea">${t.description || "[Description]"}</div>
@@ -279,6 +289,20 @@ function renderTournaments(){
     : `<div class="empty-note">No ${currentStatusFilter !== "all" ? currentStatusFilter + " " : ""}tournaments for this game yet.</div>`;
 
   attachEditHandlers();
+
+  /* Status dropdown change — saves immediately, re-renders so card class updates */
+  listEl.querySelectorAll("[data-tournament-status]").forEach(select => {
+    select.addEventListener("change", async () => {
+      const idx = parseInt(select.dataset.tournamentStatus, 10);
+      const newStatus = select.value;
+      siteContent.tournaments.list[idx].status = newStatus;
+      try {
+        await apiRequest("/content", { method:"PUT", body: JSON.stringify(siteContent) });
+        showToast("Status updated.");
+        renderTournaments();
+      } catch(err){ showToast(err.message || "Could not update. Try again."); }
+    });
+  });
 
   /* Delete handlers */
   listEl.querySelectorAll(".tournament-delete-btn").forEach(btn => {
@@ -627,8 +651,12 @@ const blankItemFor = {
   highlight:    () => ({ title:"", description:"", photoUrl:"" }),
   player:       () => ({ name:"", gamingId:"", role:"", photoUrl:"", status:"now" }),
   announcement: () => ({ title:"", body:"", date:"" }),
-  /* new tournaments are always tagged with the currently visible game tab */
-  tournament:   () => ({ name:"", game: currentTournamentGame, status:"upcoming", date:"", description:"", result:"", photoUrl:"", registrationLink:"" })
+  /* new tournaments are tagged with the currently visible game tab AND status chip */
+  tournament:   () => ({
+    name:"", game: currentTournamentGame,
+    status: (currentStatusFilter !== "all" ? currentStatusFilter : "upcoming"),
+    date:"", description:"", result:"", photoUrl:"", registrationLink:""
+  })
 };
 
 document.querySelectorAll(".admin-add-btn").forEach(btn => {
